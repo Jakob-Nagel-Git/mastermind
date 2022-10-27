@@ -1,4 +1,5 @@
-
+from enum import Enum
+import pprint
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
 
@@ -6,22 +7,40 @@ from bauhaus.utils import count_solutions, likelihood
 E = Encoding()
 
 # To create propositions, create classes for them first, annotated with "@proposition" and the Encoding
-@proposition(E)
-class BasicPropositions:
 
-    def __init__(self, data):
-        self.data = data
+
+class COLOUR(Enum):
+    PURPLE = "P"
+    RED = "R"
+    GREEN = "G"
+    YELLOW = "Y"
+    TEAL = "T"
+
+@proposition(E)
+@constraint.at_least_one(E)
+class ColourPropositions:
+
+    def __init__(self, colour: COLOUR, col: int, row: int):
+        self.colour = colour
+        self.col = col
+        self.row = row
 
     def __repr__(self):
-        return f"A.{self.data}"
+        return f"Colour: {self.colour} @({self.col}, {self.row})"
 
-
-# Different classes for propositions are useful because this allows for more dynamic constraint creation
-# for propositions within that class. For example, you can enforce that "at least one" of the propositions
-# that are instances of this class must be true by using a @constraint decorator.
-# other options include: at most one, exactly one, at most k, and implies all.
-# For a complete module reference, see https://bauhaus.readthedocs.io/en/latest/bauhaus.html
+@proposition(E)
 @constraint.at_least_one(E)
+class FeedbackPropositions:
+
+    def __init__(self, feedback, col, row):
+        self.colour = colour
+        self.col = col
+        self.row = row
+
+    def __repr__(self):
+        return f"FeedBack: {self.colour} @ {self}"
+
+
 @proposition(E)
 class FancyPropositions:
 
@@ -32,7 +51,36 @@ class FancyPropositions:
         return f"A.{self.data}"
 
 # Call your variables whatever you want
-a = BasicPropositions("a")
+
+colours = {
+    # Teal
+    "T": [],
+    # Yellow
+    "Y": [],
+    # Orange
+    "O": [],
+    # Green
+    "G": [],
+    # Purple
+    "P": [],
+    # Red
+    "R": []
+}
+
+for colour in colours:
+    # "P" = [[],[],[],[],[],[],[],[],[]]
+    # colors[key].append([True, False, False])
+    for i in range(11):
+        propositions = []
+        for j in range(4):
+            prop = ColourPropositions(colour,j,i)
+            propositions.append(prop)
+        colours[colour].append(propositions)
+
+pprint.pprint(colours)
+
+
+a = BasicPropositions("P11")
 b = BasicPropositions("b")   
 c = BasicPropositions("c")
 d = BasicPropositions("d")
