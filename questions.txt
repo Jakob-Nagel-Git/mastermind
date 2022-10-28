@@ -1,1 +1,3 @@
-1. give us money.
+1. is it fine to pre-fill 11 rows of 5 different boards before handing it to SAT solver
+2. How do we connect the feedback with the previous colour propositions in a way that we can create implications which will guide us to the correct solution. 
+3. Should we make the black and white feedback pegs correlate to specific positions rather than generic to the row? We are struggling with how to determine the solution if we are only given potential answers from the feedback. We think that would make it much easier to work within the True/False constraints of propositional logic
