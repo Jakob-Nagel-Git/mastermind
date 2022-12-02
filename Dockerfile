@@ -7,6 +7,11 @@ LABEL maintainer="Christian Muise <christian.muise@queensu.ca>"
 RUN apt-get -yqq update
 RUN apt-get -yqq install python3-pip python3-dev curl gnupg build-essential vim git
 
+
+
+RUN apt-get -yqq install python-is-python3
+
+
 # copy our application code
 RUN mkdir /PROJECT
 WORKDIR /PROJECT
@@ -15,6 +20,8 @@ WORKDIR /PROJECT
 RUN pip3 install --upgrade pip
 RUN pip3 install nnf
 RUN pip3 install bauhaus
+
+RUN pip3 install sty
 
 # install dsharp to run in the container
 RUN curl https://mulab.ai/cisc-204/dsharp -o /usr/local/bin/dsharp
