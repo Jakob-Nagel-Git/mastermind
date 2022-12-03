@@ -35,33 +35,44 @@ class ColourPos(Base):
     def __repr__(self):
         return f"Colour: {self.colour} @({self.row}, {self.col})"
 
+@proposition(E)
+class Answer():
+    def __init__(self, col: int, colour: str):
+        self.col = col
+        self.colour = colour
+    def __repr__(self):
+        return f"Answer: {self.colour} @ ({self.col})"
 
 class Feedback(Base):
     pass
 
 @proposition(E)
-class WhiteFeedbackPos(Feedback):
+class WhiteFeedbackPos(Feedback): # Uncomfirmed
     def __repr__(self):
         return f"White Feedback @ ({self.row}, {self.col})"
 
 @proposition(E)
-class BlackFeedbackPos(Feedback):
+class BlackFeedbackPos(Feedback): # Confirmed 
     def __repr__(self):
         return f"Black Feedback @ ({self.row}, {self.col})"
 
 @proposition(E)
-class EmptyFeedbackPos(Feedback):
+class EmptyFeedbackPos(Feedback): # Wrong
     def __repr__(self):
         return f"Empty Feedback @ ({self.row}, {self.col})"
 
 
-# Each spot can only have ONE colour
+# Each guess spot can only have ONE colour
 for row in ROWS:
     for col in COLS:
         constraint.add_exactly_one(
             E, [ColourPos(colour, col, row) for colour in COLOURS])
 
 
+# Each answer spot can only have ONE colour
+for col in COLS:
+    constraint.add_exactly_one(
+        E, [Answer(col, colour) for colour in COLOURS])
 
 
 # Each feedback can only have ONE type of feedback (white, black empty)
@@ -73,30 +84,63 @@ for row in ROWS:
                 BlackFeedbackPos(col, row)])
 
 
+# Black feedback pegs constraints
+for row in ROWS:
+    for col in COLS:
+        for colour in COLOURS:
+            E.add_constraint((BlackFeedbackPos(col, row) & ColourPos(col, row, colour)) >> Answer(col, colour))
+
+# White feedback pegs constraints
+for row in ROWS:
+    for col in COLS:
+        for colour in COLOURS:
+            E.add_constraint((WhiteFeedbackPos(col, row) & ColourPos(col, row, colour)) >> 
+                (Answer(0, colour) | Answer(1, colour) | Answer(2, colour) | Answer(3, colour) & ~Answer(col, colour)))
+
+# Empty feedback pegs constraints
+for row in ROWS:
+    for col in COLS:
+        for colour in COLOURS:
+            E.add_constraint((EmptyFeedbackPos(col, row) & ColourPos(col, row, colour)) >> (~Answer(0, colour) & ~Answer(1, colour) & ~Answer(2, colour) & ~Answer(3, colour)))
+
+
+# Each row must not contain duplicate colours
+for row in ROWS:
+    for colour in COLOURS:
+        for col1 in COLS:
+            for col2 in COLS:
+                if col1 != col2:
+                    E.add_constraint((~ColourPos(col1, row, colour) | ~ColourPos(col2, row, colour)))
+
+# Answer cannot contain duplicate colours
+for colour in COLOURS:
+    for col1 in COLS:
+        for col2 in COLS:
+            if col1 != col2:
+                E.add_constraint(~Answer(col1, colour) | ~Answer(col2, colour))
 
 
 
-# Proposition for guesses
-@proposition(E)
-class Guess:
-    def __init__(self, val):
-        self.val = val
-    def __repr__(self):
-        return f"Guess: {' '.join(self.val)}"
+# # Proposition for guesses
+# @proposition(E)
+# class Guess:
+#     def __init__(self, val):
+#         self.val = val
+#     def __repr__(self):
+#         return f"Guess: {' '.join(self.val)}"
+
+
 
         
-
 # Generate all valid guesses (no duplicate colours per guess)
 all_valid_guesses = permutations(COLOURS, 4) 
 
 
 # Each guess must must not contain duplicate colours
-for row in ROWS:
-    constraint.add_exactly_one(E, [Guess(val) for val in all_valid_guesses])
-
-# Guesses and answer cannot contains duplicate colours.
 # for row in ROWS:
-#     for col in COLS:
+#     constraint.add_exactly_one(E, [Guess(val) for val in all_valid_guesses])
+
+
         
 
 
@@ -117,18 +161,18 @@ if __name__ == "__main__":
 
     T = E.compile()
     # Don't compile until you're finished adding all your constraints!
-    sol = T.solve()
+    # sol = T.solve()
     # After compilation (and only after), you can check some of the properties
     # of your model:
     print("\nSatisfiable: %s" % T.satisfiable())
     print("# Solutions: %d" % count_solutions(T))
-    print("   Solution: %s" % T.solve())
+    # print("   Solution: %s" % T.solve())
     print("Len is:", len(list(all_valid_guesses)))
-    print("\nVariable likelihoods:")
-    for v,vn in zip([a, b, c, x, y, z], 'abcxyz'):
-        # Ensure that you only send these functions NNF formulas
-        # Literals are compiled to NNF here
-        print(" %s: %.2f" % (vn, likelihood(T, v)))
-    print()
+    # print("\nVariable likelihoods:")
+    # for v,vn in zip([a, b, c, x, y, z], 'abcxyz'):
+    #     # Ensure that you only send these functions NNF formulas
+    #     # Literals are compiled to NNF here
+    #     print(" %s: %.2f" % (vn, likelihood(T, v)))
+    # print()
 
     
