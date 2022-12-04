@@ -9,7 +9,7 @@ E = Encoding()
 PROPOSITIONS = []
 
 COL_COUNT = 4
-ROW_COUNT = 5
+ROW_COUNT = 2
 
 # Creates an 11x4 matrix of 0s
 empty_board = [[0]*COL_COUNT for _ in range(ROW_COUNT)]
@@ -86,7 +86,7 @@ class BlackFeedbackPos(Feedback): # Confirmed
         return hash(str(self))
     def __eq__(self, other):
         return hash(self) == hash(other)
-    
+
 
 
 @proposition(E)
@@ -101,8 +101,34 @@ class EmptyFeedbackPos(Feedback): # Wrong
         return hash(self) == hash(other)
     def __hash__(self):
         return hash(str(self))
-    
 
+
+# Define a preset board for testing
+example_colour_board = [
+    ['yellow', 'teal', 'purple', 'orange'],
+    ['purple', 'orange', 'green', 'red']
+    # ['orange', 'purple', 'teal', 'red']
+]
+answer = ['yellow', 'teal', 'green', 'red']
+example_peg_board = [
+    ['b', 'b', 'e', 'e'],
+    ['e', 'e', 'b', 'b']
+    # ['e', 'e', 'w', 'b']
+]
+# Colour board
+for row in ROWS:
+    for col in COLS:
+        E.add_constraint(ColourPos(col, row, example_colour_board[row][col]))
+
+# Feedback Board
+for row in ROWS:
+    for col in COLS:
+        if example_peg_board[row][col] == 'b':
+            E.add_constraint(BlackFeedbackPos(col, row))
+        elif example_peg_board[row][col] == 'w':
+            E.add_constraint(WhiteFeedbackPos(col, row))
+        elif example_peg_board[row][col] == 'e':
+            E.add_constraint(EmptyFeedbackPos(col, row))
 
 # Each guess spot can only have ONE colour
 for row in ROWS:
@@ -150,27 +176,29 @@ for colour in COLOURS:
 #     E.add_constraint(Answer(col, COLOURS[0]))
 
 
-# Black feedback pegs constraints
-for row in ROWS:
-    for col in COLS:
-        for colour in COLOURS:
-            E.add_constraint((~BlackFeedbackPos(col, row) | ~ColourPos(col, row, colour)) | Answer(col, colour))
-    E.add_constraint(~BlackFeedbackPos(0, row) | ~BlackFeedbackPos(1, row) | ~BlackFeedbackPos(2, row) | ~BlackFeedbackPos(3, row))
 
 
 ## Colour + Feedback >> Answer
 
-# White feedback pegs constraints
+# Black feedback peg constraints
 for row in ROWS:
     for col in COLS:
         for colour in COLOURS:
-            E.add_constraint((~WhiteFeedbackPos(col, row) | ~ColourPos(col, row, colour)) | (Answer(0, colour) | Answer(1, colour) | Answer(2, colour) | Answer(3, colour) & ~Answer(col, colour)))
+            E.add_constraint((BlackFeedbackPos(col, row) & ColourPos(col, row, colour)) >> Answer(col, colour))
+    E.add_constraint(~BlackFeedbackPos(0, row) | ~BlackFeedbackPos(1, row) | ~BlackFeedbackPos(2, row) | ~BlackFeedbackPos(3, row)) # Every row must have at least one non-black peg
+
+
+# # White feedback pegs constraints
+for row in ROWS:
+    for col in COLS:
+        for colour in COLOURS:
+            E.add_constraint((WhiteFeedbackPos(col, row) & ColourPos(col, row, colour)) >> (Answer(0, colour) | Answer(1, colour) | Answer(2, colour) | Answer(3, colour) & ~Answer(col, colour)))
 
 # Empty feedback pegs constraints
 for row in ROWS:
     for col in COLS:
         for colour in COLOURS:
-            E.add_constraint((~EmptyFeedbackPos(col, row) | ~ColourPos(col, row, colour)) | (~Answer(0, colour) & ~Answer(1, colour) & ~Answer(2, colour) & ~Answer(3, colour)))
+            E.add_constraint((EmptyFeedbackPos(col, row) & ColourPos(col, row, colour)) >> (~Answer(0, colour) & ~Answer(1, colour) & ~Answer(2, colour) & ~Answer(3, colour)))
 
 
 
@@ -184,7 +212,7 @@ for row in ROWS:
         for color in COLOURS:
             E.add_constraint((ColourPos(col, row, colour) & Answer(col, colour)) >> BlackFeedbackPos(col, row))
 
-# White peg must exist if guess slot in in answer, but is in incorrect posiition
+# # White peg must exist if guess slot in in answer, but is in incorrect posiition
 for row in ROWS:
     for colour in COLOURS:
         for col1 in COLS:
@@ -208,11 +236,11 @@ for row in ROWS:
         for colour in COLOURS:
             E.add_constraint((BlackFeedbackPos(col, row) & Answer(col, colour)) >> ColourPos(col, row, colour))
 
-# White feedback peg with respective answer determines that respective guess slot
-for row in ROWS:
-    for col in COLS:
-        for colour in COLOURS:
-            E.add_constraint((WhiteFeedbackPos(col, row) & Answer(col, colour)) >> ~ColourPos(col, row, colour))
+# # White feedback peg with respective answer determines that respective guess slot
+# for row in ROWS:
+#     for col in COLS:
+#         for colour in COLOURS:
+#             E.add_constraint((WhiteFeedbackPos(col, row) & Answer(col, colour)) >> ~ColourPos(col, row, colour))
 
 # Empty feedback peg with respective answer determines that respective guess slot
 for row in ROWS:
@@ -220,6 +248,8 @@ for row in ROWS:
         for colour in COLOURS:
             for col2 in COLS:
                 E.add_constraint((EmptyFeedbackPos(col, row) & Answer(col2, colour)) >> ~ColourPos(col, row, colour))
+
+
 
 
 
